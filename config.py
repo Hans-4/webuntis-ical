@@ -12,3 +12,7 @@ startDate = "22.09.2026" # In dd.mm.yy
 endDate = "28.09.2026" # In dd.mm.yy
 
 klass = ""
+
+subjects = [
+
+]
