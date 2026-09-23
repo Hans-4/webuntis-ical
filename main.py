@@ -1,0 +1,90 @@
+import datetime
+from ics import Calendar, Event
+import webuntis
+from webuntis.objects import KlassenObject
+
+import config
+
+class Main:
+    def __init__(self):
+         self.s = webuntis.Session(
+            username=config.username,
+            password=config.password,
+            server=config.server,
+            school=config.school,
+            useragent=config.useragent,
+        ).login()
+
+    @staticmethod
+    def date_converter():
+        start_date = config.startDate
+        end_date = config.endDate
+        datetime_format = '%d.%m.%Y'
+
+        start_datetime = datetime.datetime.strptime(start_date, datetime_format)
+        end_datetime = datetime.datetime.strptime(end_date, datetime_format)
+
+        return start_datetime, end_datetime
+
+    def get_initial_data(self):
+        school_year = config.schoolYear if config.schoolYear is not None else self.s.schoolyears().current
+        print(f"School year: {school_year}")
+
+        klass = self.s.klassen().filter(name="TG11-1")[0]
+        print(f"Class: {klass}")
+
+        return klass, school_year
+
+    def get_timetable(self, klass: KlassenObject, start, end):
+        timetable = self.s.timetable(klasse=klass, start=start, end=end).combine(combine_breaks=True)
+        for i in range(len(timetable)):
+            if not timetable[i].subjects:
+                continue
+            subject = timetable[i].subjects[0].long_name
+            location = ''
+            try:
+                if len(timetable[i].rooms) == 1:
+                    location = timetable[i].rooms[0].name
+                elif len(timetable[i].rooms) > 1:
+                    location = ', '.join(r.name for r in timetable[i].rooms)
+            except IndexError:
+                print('IndexError')
+
+            start = timetable[i].start
+            end = timetable[i].end
+
+            if len(subject) > 0:
+                self.create_ics(subject, location, start, end)
+
+    def create_ics(self, subject: str, location: str, start, end):
+        calendar = Calendar()
+        event = Event()
+
+        event.name = subject
+        event.location = location
+        event.begin = start
+        event.end = end
+
+        print(subject, location, start, end)
+
+        calendar.events.add(event)
+
+        self.save_ics(calendar)
+        return calendar
+
+    def save_ics(self, calendar):
+        with open(config.ics_location + "file.ics", "w") as f:
+            f.write(calendar.serialize())
+
+
+    def run(self):
+        start, end = self.date_converter()
+        klass, school_year = self.get_initial_data()
+
+        self.get_timetable(klass, start, end)
+
+        self.s.logout()
+
+if __name__ == '__main__':
+    main = Main()
+    main.run()
