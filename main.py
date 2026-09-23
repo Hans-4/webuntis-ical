@@ -28,10 +28,8 @@ class Main:
 
     def get_initial_data(self):
         school_year = config.schoolYear if config.schoolYear is not None else self.s.schoolyears().current
-        print(f"School year: {school_year}")
 
-        klass = self.s.klassen().filter(name="TG11-1")[0]
-        print(f"Class: {klass}")
+        klass = self.s.klassen().filter(name=config.klass)[0]
 
         return klass, school_year
 
@@ -41,20 +39,42 @@ class Main:
             if not timetable[i].subjects:
                 continue
             subject = timetable[i].subjects[0].long_name
-            location = ''
-            try:
-                if len(timetable[i].rooms) == 1:
-                    location = timetable[i].rooms[0].name
-                elif len(timetable[i].rooms) > 1:
-                    location = ', '.join(r.name for r in timetable[i].rooms)
-            except IndexError:
-                print('IndexError')
+            subject_short = timetable[i].subjects[0].name
 
-            start = timetable[i].start
-            end = timetable[i].end
+            filter = self.filter_subject(subject_short)
 
-            if len(subject) > 0:
-                self.create_ics(calendar, subject, location, start, end)
+            if filter:
+                location = ''
+                try:
+                    if len(timetable[i].rooms) == 1:
+                        location = timetable[i].rooms[0].name
+                    elif len(timetable[i].rooms) > 1:
+                        location = ', '.join(r.name for r in timetable[i].rooms)
+                except IndexError:
+                    print('IndexError')
+
+                start = timetable[i].start
+                end = timetable[i].end
+
+                if len(subject) > 0:
+                    self.create_ics(calendar, subject, location, start, end)
+
+            else:
+                pass
+
+    @staticmethod
+    def filter_subject(subject_short: str):
+        config_subjects = config.subjects
+
+        if not config_subjects:
+            return True
+
+        else:
+            if subject_short in config_subjects:
+                return True
+            else:
+                return False
+
 
     def create_ics(self, calendar: Calendar, subject: str, location: str, start, end):
         event = Event()
