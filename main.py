@@ -35,7 +35,7 @@ class Main:
 
         return klass, school_year
 
-    def get_timetable(self, klass: KlassenObject, start, end):
+    def get_timetable(self, klass: KlassenObject, start, end, calendar: Calendar):
         timetable = self.s.timetable(klasse=klass, start=start, end=end).combine(combine_breaks=True)
         for i in range(len(timetable)):
             if not timetable[i].subjects:
@@ -54,23 +54,16 @@ class Main:
             end = timetable[i].end
 
             if len(subject) > 0:
-                self.create_ics(subject, location, start, end)
+                self.create_ics(calendar, subject, location, start, end)
 
-    def create_ics(self, subject: str, location: str, start, end):
-        calendar = Calendar()
+    def create_ics(self, calendar: Calendar, subject: str, location: str, start, end):
         event = Event()
-
         event.name = subject
         event.location = location
         event.begin = start
         event.end = end
 
-        print(subject, location, start, end)
-
         calendar.events.add(event)
-
-        self.save_ics(calendar)
-        return calendar
 
     def save_ics(self, calendar):
         with open(config.ics_location + "file.ics", "w") as f:
@@ -80,9 +73,11 @@ class Main:
     def run(self):
         start, end = self.date_converter()
         klass, school_year = self.get_initial_data()
+        calendar = Calendar()
 
-        self.get_timetable(klass, start, end)
+        self.get_timetable(klass, start, end, calendar)
 
+        self.save_ics(calendar)
         self.s.logout()
 
 if __name__ == '__main__':
