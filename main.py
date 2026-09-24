@@ -1,4 +1,5 @@
 import datetime
+import pytz
 from ics import Calendar, Event
 import webuntis
 from webuntis.objects import KlassenObject
@@ -36,10 +37,18 @@ class Main:
     def get_timetable(self, klass: KlassenObject, start, end, calendar: Calendar):
         timetable = self.s.timetable(klasse=klass, start=start, end=end).combine(combine_breaks=True)
         for i in range(len(timetable)):
+            if timetable[i].code == "cancelled":
+                continue
             if not timetable[i].subjects:
                 continue
-            subject = timetable[i].subjects[0].long_name
-            subject_short = timetable[i].subjects[0].name
+
+            subject = timetable[i].subjects[0]
+
+            if not subject._data.get("active", True):
+                continue
+
+            subject_name = subject.long_name
+            subject_short = subject.name
 
             subject_filter = self.filter_subject(subject_short)
 
@@ -60,16 +69,27 @@ class Main:
                             location = ''.join(str(s) for s in location_list)
                     except IndexError:
                         location = ''
-                        print(f"No room for {subject} found")
+                        print(f"No room for {subject_name} found")
 
-                start = timetable[i].start
-                end = timetable[i].end
+                start = self.apply_utc(timetable[i].start)
+                end = self.apply_utc(timetable[i].end)
+                attendees = timetable[i].klassen
 
-                if len(subject) > 0:
-                    self.create_ics(calendar, subject, location, start, end)
+                attendees = {kl.name for kl in attendees}
+
+                if len(subject_name) > 0:
+                    self.create_ics(calendar, subject_name, location, attendees, start, end)
 
             else:
                 pass
+
+    @staticmethod
+    def apply_utc(local_time):
+        local = pytz.timezone(config.timezone)
+        local_dt = local.localize(local_time, is_dst=None)
+        utc_dt = local_dt.astimezone(pytz.utc)
+
+        return utc_dt
 
     @staticmethod
     def filter_subject(subject_short: str):
@@ -85,11 +105,14 @@ class Main:
                 return False
 
     @staticmethod
-    def create_ics(calendar: Calendar, subject: str, location: str|None, start, end):
+    def create_ics(calendar: Calendar, subject: str, location: str|None, attendees: set|None, start, end):
         event = Event()
         event.name = subject
         if location is not None:
             event.location = location
+
+        if attendees is not None:
+            event.attendees = attendees
 
         event.begin = start
         event.end = end
