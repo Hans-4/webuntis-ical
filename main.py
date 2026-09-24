@@ -76,7 +76,6 @@ class Main:
                 attendees = timetable[i].klassen
 
                 attendees = {kl.name for kl in attendees}
-                print(attendees)
 
                 if len(subject_name) > 0:
                     self.create_ics(calendar, subject_name, location, attendees, start, end)
@@ -84,9 +83,10 @@ class Main:
             else:
                 pass
 
-    def apply_utc(self, datetime):
+    @staticmethod
+    def apply_utc(local_time):
         local = pytz.timezone(config.timezone)
-        local_dt = local.localize(datetime, is_dst=None)
+        local_dt = local.localize(local_time, is_dst=None)
         utc_dt = local_dt.astimezone(pytz.utc)
 
         return utc_dt
