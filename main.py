@@ -41,9 +41,9 @@ class Main:
             subject = timetable[i].subjects[0].long_name
             subject_short = timetable[i].subjects[0].name
 
-            filter = self.filter_subject(subject_short)
+            subject_filter = self.filter_subject(subject_short)
 
-            if filter:
+            if subject_filter:
                 location = ''
                 try:
                     if len(timetable[i].rooms) == 1:
@@ -84,8 +84,8 @@ class Main:
             else:
                 return False
 
-
-    def create_ics(self, calendar: Calendar, subject: str, location: str|None, start, end):
+    @staticmethod
+    def create_ics(calendar: Calendar, subject: str, location: str|None, start, end):
         event = Event()
         event.name = subject
         if location is not None:
@@ -96,7 +96,8 @@ class Main:
 
         calendar.events.add(event)
 
-    def save_ics(self, calendar):
+    @staticmethod
+    def save_ics(calendar):
         with open(config.ics_location + "file.ics", "w") as f:
             f.write(calendar.serialize())
 
