@@ -51,7 +51,16 @@ class Main:
                     elif len(timetable[i].rooms) > 1:
                         location = ', '.join(r.name for r in timetable[i].rooms)
                 except IndexError:
-                    print('IndexError')
+                    try:
+                        location_list = timetable[i].original_rooms
+                        if not location_list:
+                            location = None
+
+                        else:
+                            location = ''.join(str(s) for s in location_list)
+                    except IndexError:
+                        location = ''
+                        print(f"No room for {subject} found")
 
                 start = timetable[i].start
                 end = timetable[i].end
@@ -76,10 +85,12 @@ class Main:
                 return False
 
 
-    def create_ics(self, calendar: Calendar, subject: str, location: str, start, end):
+    def create_ics(self, calendar: Calendar, subject: str, location: str|None, start, end):
         event = Event()
         event.name = subject
-        event.location = location
+        if location is not None:
+            event.location = location
+
         event.begin = start
         event.end = end
 
