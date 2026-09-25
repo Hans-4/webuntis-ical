@@ -1,10 +1,13 @@
 import datetime
+from zoneinfo import ZoneInfo
+
 import pytz
-from ics import Calendar, Event
 import webuntis
+from ics import Calendar, Event
 from webuntis.objects import KlassenObject
 
 import config
+
 
 class Main:
     def __init__(self):
@@ -22,8 +25,10 @@ class Main:
         end_date = config.endDate
         datetime_format = '%d.%m.%Y'
 
-        start_datetime = datetime.datetime.strptime(start_date, datetime_format)
-        end_datetime = datetime.datetime.strptime(end_date, datetime_format)
+        time_zone = ZoneInfo(config.timezone)
+
+        start_datetime = datetime.datetime.strptime(start_date, datetime_format).replace(tzinfo=time_zone)
+        end_datetime = datetime.datetime.strptime(end_date, datetime_format).replace(tzinfo=time_zone)
 
         return start_datetime, end_datetime
 
@@ -99,10 +104,7 @@ class Main:
             return True
 
         else:
-            if subject_short in config_subjects:
-                return True
-            else:
-                return False
+            return subject_short in config_subjects
 
     @staticmethod
     def create_ics(calendar: Calendar, subject: str, location: str|None, attendees: set|None, start, end):
@@ -127,7 +129,7 @@ class Main:
 
     def run(self):
         start, end = self.date_converter()
-        klass, school_year = self.get_initial_data()
+        klass, _ = self.get_initial_data()
         calendar = Calendar()
 
         self.get_timetable(klass, start, end, calendar)
