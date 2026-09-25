@@ -1,8 +1,9 @@
 import datetime
+from zoneinfo import ZoneInfo
+
 import pytz
 import webuntis
 from ics import Calendar, Event
-from zoneinfo import ZoneInfo
 from webuntis.objects import KlassenObject
 
 import config
