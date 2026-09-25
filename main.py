@@ -8,6 +8,7 @@ from webuntis.objects import KlassenObject
 
 import config
 
+
 class Main:
     def __init__(self):
          self.s = webuntis.Session(
@@ -128,7 +129,7 @@ class Main:
 
     def run(self):
         start, end = self.date_converter()
-        klass, school_year = self.get_initial_data()
+        klass, _ = self.get_initial_data()
         calendar = Calendar()
 
         self.get_timetable(klass, start, end, calendar)
